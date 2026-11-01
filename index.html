@@ -6,9 +6,17 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
 <title>Free Fire - Battlegrounds 16:9</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+  * { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    user-select: none; 
+    -webkit-user-select: none; 
+    touch-action: manipulation;
+  }
   html, body {
     width: 100%;
     height: 100%;
@@ -42,21 +50,6 @@
   .ch-circle { width: 34px; height: 34px; border: 2px solid rgba(255,255,255,0.6); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.1s; }
   .ch-red { border-color: #ff2222 !important; box-shadow: 0 0 10px #ff0000; }
 
-  /* DAMAGE NUMBERS */
-  .dmg-num {
-    position: absolute;
-    font-weight: 900;
-    pointer-events: none;
-    animation: floatDmg 0.75s forwards ease-out;
-    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;
-    font-size: 26px;
-    z-index: 40;
-  }
-  @keyframes floatDmg {
-    0% { opacity: 1; transform: translate(-50%, 0) scale(1.4); }
-    100% { opacity: 0; transform: translate(-50%, -55px) scale(0.9); }
-  }
-
   /* TOP HUD */
   #top-bar {
     position: absolute;
@@ -79,6 +72,12 @@
   }
   #mm-canvas { width: 100%; height: 100%; }
   
+  #top-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: auto;
+  }
   #match-stats {
     display: flex;
     gap: 15px;
@@ -86,9 +85,21 @@
     padding: 6px 14px;
     border-radius: 20px;
     border: 1px solid rgba(255,255,255,0.2);
-    align-self: flex-start;
     font-weight: bold;
     font-size: 13px;
+  }
+  #btn-fs-toggle {
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: #ffb300;
+    font-size: 16px;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
   }
 
   /* HP / EP HUD */
@@ -187,7 +198,7 @@
   #start-prompt {
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.92);
+    background: rgba(0,0,0,0.95);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -199,12 +210,12 @@
   #start-btn {
     background: #ff9900;
     color: #000;
-    padding: 16px 36px;
+    padding: 18px 36px;
     font-weight: 900;
-    border-radius: 6px;
-    font-size: 20px;
+    border-radius: 8px;
+    font-size: 19px;
     border: none;
-    box-shadow: 0 0 20px #ff9900;
+    box-shadow: 0 0 25px rgba(255, 153, 0, 0.7);
     cursor: pointer;
     margin-top: 20px;
   }
@@ -225,9 +236,12 @@
     <div id="minimap-wrap">
       <canvas id="mm-canvas" width="95" height="95"></canvas>
     </div>
-    <div id="match-stats">
-      <div>ALIVE: <span id="alive-count" style="color:#00ff88">12</span></div>
-      <div>KILLS: <span id="kill-count" style="color:#ffb300">0</span></div>
+    <div id="top-controls">
+      <div id="match-stats">
+        <div>ALIVE: <span id="alive-count" style="color:#00ff88">12</span></div>
+        <div>KILLS: <span id="kill-count" style="color:#ffb300">0</span></div>
+      </div>
+      <button id="btn-fs-toggle" title="Toggle Fullscreen">⛶</button>
     </div>
   </div>
 
@@ -252,40 +266,64 @@
   <button class="touch-btn" id="btn-reload">LOAD</button>
 
   <div id="start-prompt">
-    <h1 style="color:#ffb300; font-size:32px; letter-spacing:2px; margin-bottom:10px;">FREE FIRE: CLOCK TOWER 3D</h1>
-    <p style="color:#ccc; font-size:14px;">Mobile par Landscape mode aur Full Screen ke liye button dabayein</p>
-    <button id="start-btn">TAP TO DROP / PLAY (FULLSCREEN)</button>
+    <h1 style="color:#ffb300; font-size:28px; letter-spacing:2px; margin-bottom:12px;">FREE FIRE: CLOCK TOWER 3D</h1>
+    <p style="color:#ddd; font-size:14px; max-width: 320px; line-height: 1.4;">Game ko bina URL bar ke khelne ke liye Start dabayein</p>
+    <button id="start-btn">TAP TO PLAY (FULLSCREEN)</button>
   </div>
 </div>
 
 <script>
-/* FULLSCREEN & ORIENTATION LOCK */
+/* FULLSCREEN & ORIENTATION CONTROLLER */
+const viewport = document.getElementById('game-viewport');
 const startPrompt = document.getElementById('start-prompt');
 const startBtn = document.getElementById('start-btn');
+const fsToggleBtn = document.getElementById('btn-fs-toggle');
 
-startBtn.addEventListener('click', enterGameFullscreen);
-startBtn.addEventListener('touchstart', enterGameFullscreen);
+async function triggerFullscreen() {
+  const target = document.documentElement;
+  try {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      if (target.requestFullscreen) {
+        await target.requestFullscreen();
+      } else if (target.webkitRequestFullscreen) {
+        await target.webkitRequestFullscreen();
+      }
+      
+      // Auto Landscape Lock
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock('landscape').catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.warn("Fullscreen permission error:", err);
+  }
+}
 
-function enterGameFullscreen(e) {
+async function startGame(e) {
   if (e) e.preventDefault();
-  const el = document.documentElement;
-
-  // Request Fullscreen to hide Chrome URL Bar
-  if (el.requestFullscreen) {
-    el.requestFullscreen().catch(()=>{});
-  } else if (el.webkitRequestFullscreen) {
-    el.webkitRequestFullscreen().catch(()=>{});
-  }
-
-  // Lock orientation to Landscape
-  if (screen.orientation && screen.orientation.lock) {
-    screen.orientation.lock('landscape').catch(()=>{});
-  }
-
+  await triggerFullscreen();
   startPrompt.style.display = 'none';
   if (audioCtx.state === 'suspended') audioCtx.resume();
-  onWindowResize();
+  setTimeout(onWindowResize, 150);
 }
+
+startBtn.addEventListener('touchend', startGame, { passive: false });
+startBtn.addEventListener('click', startGame);
+
+fsToggleBtn.addEventListener('click', async () => {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    await triggerFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+  setTimeout(onWindowResize, 100);
+});
+
+// Fullscreen state listener
+document.addEventListener('fullscreenchange', () => {
+  onWindowResize();
+});
 
 /* AUDIO ENGINE */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -409,7 +447,7 @@ for (let i = 0; i < 11; i++) {
   enemies.push({ mesh, hp: 150, alive: true, speed: 0.12, shootTimer: Math.random() * 2 });
 }
 
-/* TOUCH SWIPE CAMERA (Look Zone) */
+/* TOUCH SWIPE CAMERA */
 const lookZone = document.getElementById('look-zone');
 let lastTouchX = null, lastTouchY = null;
 
@@ -477,6 +515,7 @@ document.getElementById('btn-reload').addEventListener('touchstart', (e) => {
 });
 
 /* SHOOTING */
+let kills = 0;
 function shoot() {
   if (player.ammo <= 0) return;
   player.ammo--;
@@ -506,7 +545,6 @@ function shoot() {
     }
   }
 }
-let kills = 0;
 
 /* MINIMAP */
 const mmCanvas = document.getElementById('mm-canvas');
@@ -535,7 +573,7 @@ function updateMinimap() {
   mmCtx.fill();
 }
 
-/* LOOP */
+/* MAIN LOOP */
 function animate() {
   requestAnimationFrame(animate);
 
@@ -565,11 +603,14 @@ function animate() {
 }
 
 function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(width, height);
 }
 window.addEventListener('resize', onWindowResize);
+window.addEventListener('orientationchange', () => setTimeout(onWindowResize, 200));
 
 animate();
 </script>
