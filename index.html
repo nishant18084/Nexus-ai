@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Free Fire 3D</title>
+<title>Free Fire 3D - Battlegrounds</title>
 <style>
   * { 
     box-sizing: border-box; 
@@ -35,6 +35,73 @@
   }
   canvas#c3d { width: 100%; height: 100%; display: block; }
   
+  /* LOBBY UI OVERLAY */
+  #lobby-screen {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 40%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none;
+  }
+  #lobby-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: auto;
+  }
+  .player-tag {
+    background: rgba(0,0,0,0.7);
+    border: 2px solid #ffaa00;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .player-lvl {
+    background: #ffaa00;
+    color: #000;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  #lobby-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    pointer-events: auto;
+  }
+  .mode-badge {
+    background: rgba(0,0,0,0.6);
+    border-left: 4px solid #ffaa00;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 0 6px 6px 0;
+  }
+  #start-match-btn {
+    background: linear-gradient(90deg, #ff8800, #ffbb00);
+    color: #000;
+    padding: 16px 48px;
+    font-weight: 900;
+    border-radius: 8px;
+    font-size: 22px;
+    border: none;
+    box-shadow: 0 0 25px rgba(255,160,0,0.8);
+    cursor: pointer;
+    letter-spacing: 2px;
+  }
+  #start-match-btn:active { transform: scale(0.96); }
+
+  /* IN-GAME HUD (Hidden in Lobby) */
+  .ingame-hud { display: none; }
+
   /* CROSSHAIR */
   #crosshair {
     position: absolute;
@@ -54,7 +121,6 @@
     top: 10px;
     left: 12px;
     right: 12px;
-    display: flex;
     justify-content: space-between;
     pointer-events: none;
     z-index: 10;
@@ -69,12 +135,6 @@
   }
   #mm-canvas { width: 100%; height: 100%; }
   
-  #top-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    pointer-events: auto;
-  }
   #match-stats {
     display: flex;
     gap: 15px;
@@ -84,6 +144,7 @@
     border: 1px solid rgba(255,255,255,0.2);
     font-weight: bold;
     font-size: 13px;
+    align-self: flex-start;
   }
 
   /* HP HUD */
@@ -92,7 +153,6 @@
     bottom: 12px;
     left: 50%;
     transform: translateX(-50%);
-    display: flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
@@ -113,7 +173,6 @@
     border: 2px solid #ffaa00;
     border-radius: 8px;
     padding: 6px 12px;
-    display: flex;
     flex-direction: column;
     align-items: flex-end;
     pointer-events: none;
@@ -122,7 +181,7 @@
   #gun-name { font-size: 11px; font-weight: 800; color: #ffb300; }
   #ammo-val { font-size: 20px; font-weight: 900; }
 
-  /* MOBILE CONTROLS */
+  /* MOBILE TOUCH CONTROLS */
   .touch-btn {
     position: absolute;
     pointer-events: auto;
@@ -130,7 +189,6 @@
     border: 2px solid rgba(255,255,255,0.6);
     border-radius: 50%;
     color: #fff;
-    display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 800;
@@ -143,7 +201,6 @@
   #btn-scope { right: 100px; bottom: 85px; width: 50px; height: 50px; font-size: 12px; }
   #btn-reload { right: 34px; bottom: 150px; width: 44px; height: 44px; font-size: 11px; }
 
-  /* CAMERA SWIPE ZONE */
   #look-zone {
     position: absolute;
     top: 0;
@@ -154,7 +211,6 @@
     touch-action: none;
   }
 
-  /* JOYSTICK */
   #stick-base {
     position: absolute;
     bottom: 25px;
@@ -178,33 +234,7 @@
     pointer-events: none;
   }
 
-  /* START PROMPT OVERLAY */
-  #start-prompt {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.92);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 999;
-    text-align: center;
-    padding: 20px;
-  }
-  #start-btn {
-    background: #ff9900;
-    color: #000;
-    padding: 16px 32px;
-    font-weight: 900;
-    border-radius: 8px;
-    font-size: 18px;
-    border: none;
-    box-shadow: 0 0 20px #ff9900;
-    cursor: pointer;
-    margin-top: 20px;
-  }
-
-  /* BOOYAH BANNER (FREE FIRE STYLE) */
+  /* BOOYAH SCREEN */
   #booyah-screen {
     position: absolute;
     inset: 0;
@@ -214,7 +244,6 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    animation: fadeIn 0.5s ease-out;
   }
   #booyah-text {
     font-size: 72px;
@@ -223,16 +252,9 @@
     color: #ffea00;
     text-shadow: 0 0 20px #ff7700, 0 0 40px #ff3300, 4px 4px 0 #000;
     letter-spacing: 6px;
-    transform: scale(0.6);
     animation: booyahPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   }
-  #booyah-sub {
-    font-size: 20px;
-    font-weight: bold;
-    color: #fff;
-    margin-top: 15px;
-    letter-spacing: 2px;
-  }
+  #booyah-sub { font-size: 20px; font-weight: bold; margin-top: 15px; }
   #btn-restart {
     margin-top: 30px;
     background: #ffaa00;
@@ -250,10 +272,6 @@
     60% { transform: scale(1.15); opacity: 1; }
     100% { transform: scale(1); opacity: 1; }
   }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -262,69 +280,90 @@
 <div id="game-viewport">
   <canvas id="c3d"></canvas>
 
-  <div id="crosshair">
+  <!-- LOBBY SCREEN -->
+  <div id="lobby-screen">
+    <div id="lobby-top">
+      <div class="player-tag">
+        <span class="player-lvl">LV. 45</span>
+        <span>SHADOW_WARRIOR</span>
+      </div>
+      <div style="font-size: 14px; font-weight: bold; color: #ffaa00;">BERMUDA CLASSIC</div>
+    </div>
+    <div id="lobby-bottom">
+      <div class="mode-badge">SOLO • CLOCK TOWER</div>
+      <button id="start-match-btn">START</button>
+    </div>
+  </div>
+
+  <!-- IN-GAME HUD -->
+  <div id="crosshair" class="ingame-hud">
     <div class="ch-circle" id="ch-circle"></div>
     <div class="ch-dot"></div>
   </div>
 
-  <div id="top-bar">
+  <div id="top-bar" class="ingame-hud">
     <div id="minimap-wrap">
       <canvas id="mm-canvas" width="85" height="85"></canvas>
     </div>
-    <div id="top-controls">
-      <div id="match-stats">
-        <div>ALIVE: <span id="alive-count" style="color:#00ff88">12</span></div>
-        <div>KILLS: <span id="kill-count" style="color:#ffb300">0</span></div>
-      </div>
+    <div id="match-stats">
+      <div>ALIVE: <span id="alive-count" style="color:#00ff88">12</span></div>
+      <div>KILLS: <span id="kill-count" style="color:#ffb300">0</span></div>
     </div>
   </div>
 
-  <div id="bottom-hud">
+  <div id="bottom-hud" class="ingame-hud">
     <div id="bars">
       <div class="bar-bg"><div id="ep-fill"></div><div class="bar-text">EP 120/200</div></div>
       <div class="bar-bg"><div id="hp-fill"></div><div class="bar-text">HP 200/200</div></div>
     </div>
   </div>
 
-  <div id="weapon-box">
+  <div id="weapon-box" class="ingame-hud">
     <div id="gun-name">ASSASSIN BLADE</div>
     <div id="ammo-val"><span id="clip-val">30</span><span style="font-size:12px;color:#888;">/120</span></div>
   </div>
 
-  <div id="look-zone"></div>
-  <div id="stick-base"><div id="stick-thumb"></div></div>
-  <button class="touch-btn" id="btn-fire">FIRE</button>
-  <button class="touch-btn" id="btn-jump">JUMP</button>
-  <button class="touch-btn" id="btn-scope">AIM</button>
-  <button class="touch-btn" id="btn-reload">LOAD</button>
-
-  <div id="start-prompt">
-    <h1 style="color:#ffb300; font-size:26px; margin-bottom:10px;">SHADOW ROGUE 3D</h1>
-    <p style="color:#aaa; font-size:14px;">Khelne ke liye click karein</p>
-    <button id="start-btn" type="button">TAP TO PLAY</button>
-  </div>
+  <!-- Controls -->
+  <div id="look-zone" class="ingame-hud"></div>
+  <div id="stick-base" class="ingame-hud"><div id="stick-thumb"></div></div>
+  <button class="touch-btn ingame-hud" id="btn-fire">FIRE</button>
+  <button class="touch-btn ingame-hud" id="btn-jump">JUMP</button>
+  <button class="touch-btn ingame-hud" id="btn-scope">AIM</button>
+  <button class="touch-btn ingame-hud" id="btn-reload">LOAD</button>
 
   <!-- BOOYAH POPUP -->
   <div id="booyah-screen">
     <div id="booyah-text">BOOYAH!</div>
     <div id="booyah-sub">VICTORY #1 / 12</div>
-    <button id="btn-restart" onclick="location.reload()">PLAY AGAIN</button>
+    <button id="btn-restart" onclick="location.reload()">BACK TO LOBBY</button>
   </div>
 </div>
 
 <script>
 window.addEventListener('DOMContentLoaded', () => {
-  if (typeof THREE === 'undefined') {
-    alert("Three.js load nahi hua.");
-    return;
-  }
+  let inLobby = true;
+  let gameWon = false;
+  let kills = 0;
 
-  const startPrompt = document.getElementById('start-prompt');
-  const startBtn = document.getElementById('start-btn');
+  const lobbyScreen = document.getElementById('lobby-screen');
+  const startMatchBtn = document.getElementById('start-match-btn');
+  const ingameHUDs = document.querySelectorAll('.ingame-hud');
   const booyahScreen = document.getElementById('booyah-screen');
 
-  function startGame() {
-    startPrompt.style.display = 'none';
+  function enterMatch() {
+    inLobby = false;
+    lobbyScreen.style.display = 'none';
+
+    // Show gameplay UI
+    ingameHUDs.forEach(el => {
+      if (el.id === 'top-bar' || el.id === 'bottom-hud' || el.id === 'weapon-box') {
+        el.style.display = 'flex';
+      } else {
+        el.style.display = 'block';
+      }
+    });
+
+    // Fullscreen trigger
     try {
       const el = document.documentElement;
       if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
@@ -332,17 +371,14 @@ window.addEventListener('DOMContentLoaded', () => {
       if (screen.orientation && screen.orientation.lock) {
         screen.orientation.lock('landscape').catch(() => {});
       }
-    } catch (e) {}
+    } catch(e){}
 
-    try {
-      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    } catch (e) {}
-
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
     onWindowResize();
   }
 
-  startBtn.onclick = startGame;
-  startBtn.ontouchend = (e) => { e.preventDefault(); startGame(); };
+  startMatchBtn.onclick = enterMatch;
+  startMatchBtn.ontouchend = (e) => { e.preventDefault(); enterMatch(); };
 
   /* AUDIO */
   let audioCtx = null;
@@ -363,7 +399,6 @@ window.addEventListener('DOMContentLoaded', () => {
   function playBooyahSound() {
     try {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'triangle';
@@ -513,10 +548,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   lookZone.addEventListener('touchend', () => { lastX = null; lastY = null; });
 
-  /* ACTIONS & BOOYAH TRIGGER */
-  let kills = 0;
-  let gameWon = false;
-
+  /* ACTIONS & BOOYAH */
   function triggerBooyah() {
     if (gameWon) return;
     gameWon = true;
@@ -525,7 +557,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   document.getElementById('btn-fire').onclick = () => {
-    if (player.ammo <= 0 || gameWon) return;
+    if (inLobby || player.ammo <= 0 || gameWon) return;
     player.ammo--;
     document.getElementById('clip-val').innerText = player.ammo;
     playGunshot();
@@ -548,7 +580,6 @@ window.addEventListener('DOMContentLoaded', () => {
         const remainingAlive = 1 + enemies.filter(e => e.alive).length;
         document.getElementById('alive-count').innerText = remainingAlive;
 
-        // Agar sirf hum bache hain (ALIVE: 1) toh BOOYAH!
         if (remainingAlive === 1) {
           setTimeout(triggerBooyah, 400);
         }
@@ -588,32 +619,44 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   /* LOOP */
+  let lobbyTimer = 0;
   function animate() {
     requestAnimationFrame(animate);
 
-    const speed = 0.2;
-    const sin = Math.sin(player.rotY);
-    const cos = Math.cos(player.rotY);
+    if (inLobby) {
+      // Lobby Showcase Mode (Front view with rotating character)
+      lobbyTimer += 0.015;
+      player.mesh.position.set(0, 0, 0);
+      player.mesh.rotation.y = lobbyTimer;
+      camera.position.set(0, 2.2, 4.2);
+      camera.lookAt(0, 2.0, 0);
+    } else {
+      // In-Match Gameplay Mode
+      const speed = 0.2;
+      const sin = Math.sin(player.rotY);
+      const cos = Math.cos(player.rotY);
 
-    player.x += (touchMoveX * cos + touchMoveZ * sin) * speed;
-    player.z += (-touchMoveX * sin + touchMoveZ * cos) * speed;
+      player.x += (touchMoveX * cos + touchMoveZ * sin) * speed;
+      player.z += (-touchMoveX * sin + touchMoveZ * cos) * speed;
 
-    player.vy -= 0.018;
-    player.y += player.vy;
-    if (player.y <= 0) { player.y = 0; player.vy = 0; player.onGround = true; }
+      player.vy -= 0.018;
+      player.y += player.vy;
+      if (player.y <= 0) { player.y = 0; player.vy = 0; player.onGround = true; }
 
-    player.mesh.position.set(player.x, player.y, player.z);
-    player.mesh.rotation.y = player.rotY;
+      player.mesh.position.set(player.x, player.y, player.z);
+      player.mesh.rotation.y = player.rotY;
 
-    const camDist = 4.5;
-    camera.position.set(
-      player.x - Math.sin(player.rotY) * camDist + Math.cos(player.rotY) * 0.7,
-      player.y + 2.5 + Math.sin(player.pitch) * camDist,
-      player.z - Math.cos(player.rotY) * camDist - Math.sin(player.rotY) * 0.7
-    );
-    camera.lookAt(player.x + Math.sin(player.rotY) * 30, player.y + 2.5 - Math.sin(player.pitch) * 30, player.z + Math.cos(player.rotY) * 30);
+      const camDist = 4.5;
+      camera.position.set(
+        player.x - Math.sin(player.rotY) * camDist + Math.cos(player.rotY) * 0.7,
+        player.y + 2.5 + Math.sin(player.pitch) * camDist,
+        player.z - Math.cos(player.rotY) * camDist - Math.sin(player.rotY) * 0.7
+      );
+      camera.lookAt(player.x + Math.sin(player.rotY) * 30, player.y + 2.5 - Math.sin(player.pitch) * 30, player.z + Math.cos(player.rotY) * 30);
 
-    updateMinimap();
+      updateMinimap();
+    }
+
     renderer.render(scene, camera);
   }
 
