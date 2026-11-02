@@ -20,7 +20,7 @@
     height: 100%;
     background: #000;
     color: #fff;
-    font-family: sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow: hidden;
     position: fixed;
     inset: 0;
@@ -203,8 +203,58 @@
     cursor: pointer;
     margin-top: 20px;
   }
+
+  /* BOOYAH BANNER (FREE FIRE STYLE) */
+  #booyah-screen {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255,180,0,0.3) 0%, rgba(0,0,0,0.85) 80%);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.5s ease-out;
+  }
+  #booyah-text {
+    font-size: 72px;
+    font-weight: 900;
+    font-style: italic;
+    color: #ffea00;
+    text-shadow: 0 0 20px #ff7700, 0 0 40px #ff3300, 4px 4px 0 #000;
+    letter-spacing: 6px;
+    transform: scale(0.6);
+    animation: booyahPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  #booyah-sub {
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+    margin-top: 15px;
+    letter-spacing: 2px;
+  }
+  #btn-restart {
+    margin-top: 30px;
+    background: #ffaa00;
+    color: #000;
+    padding: 14px 34px;
+    font-size: 18px;
+    font-weight: 900;
+    border: none;
+    border-radius: 30px;
+    box-shadow: 0 0 25px rgba(255,170,0,0.8);
+    cursor: pointer;
+  }
+  @keyframes booyahPop {
+    0% { transform: scale(0.4); opacity: 0; }
+    60% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 </style>
-<!-- Fallback Three.js Script -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
@@ -253,34 +303,37 @@
     <p style="color:#aaa; font-size:14px;">Khelne ke liye click karein</p>
     <button id="start-btn" type="button">TAP TO PLAY</button>
   </div>
+
+  <!-- BOOYAH POPUP -->
+  <div id="booyah-screen">
+    <div id="booyah-text">BOOYAH!</div>
+    <div id="booyah-sub">VICTORY #1 / 12</div>
+    <button id="btn-restart" onclick="location.reload()">PLAY AGAIN</button>
+  </div>
 </div>
 
 <script>
 window.addEventListener('DOMContentLoaded', () => {
-  // Check if Three.js loaded
   if (typeof THREE === 'undefined') {
-    alert("Three.js library load nahi ho saki. Internet connection check karein.");
+    alert("Three.js load nahi hua.");
     return;
   }
 
   const startPrompt = document.getElementById('start-prompt');
   const startBtn = document.getElementById('start-btn');
+  const booyahScreen = document.getElementById('booyah-screen');
 
   function startGame() {
     startPrompt.style.display = 'none';
-
-    // Safe Fullscreen trigger
     try {
       const el = document.documentElement;
       if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
       else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen().catch(() => {});
-      
       if (screen.orientation && screen.orientation.lock) {
         screen.orientation.lock('landscape').catch(() => {});
       }
     } catch (e) {}
 
-    // Init Audio Context safely
     try {
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
     } catch (e) {}
@@ -289,10 +342,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   startBtn.onclick = startGame;
-  startBtn.ontouchend = (e) => {
-    e.preventDefault();
-    startGame();
-  };
+  startBtn.ontouchend = (e) => { e.preventDefault(); startGame(); };
 
   /* AUDIO */
   let audioCtx = null;
@@ -307,6 +357,24 @@ window.addEventListener('DOMContentLoaded', () => {
       src.buffer = buffer;
       src.connect(audioCtx.destination);
       src.start();
+    } catch(e){}
+  }
+
+  function playBooyahSound() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.2);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 1.2);
     } catch(e){}
   }
 
@@ -344,17 +412,14 @@ window.addEventListener('DOMContentLoaded', () => {
     const redMat = new THREE.MeshLambertMaterial({ color: isEnemy ? 0xff2222 : 0x9e1b26 });
     const darkMat = new THREE.MeshLambertMaterial({ color: 0x1f1d24 });
 
-    // Body
     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 1.1, 8), darkMat);
     body.position.y = 1.9;
     group.add(body);
 
-    // Scarf
     const scarf = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.45, 0.3, 8), redMat);
     scarf.position.y = 2.4;
     group.add(scarf);
 
-    // Hood & Head
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 12), hoodMat);
     head.position.y = 2.75;
     group.add(head);
@@ -364,12 +429,10 @@ window.addEventListener('DOMContentLoaded', () => {
     hoodPeak.rotation.x = -0.2;
     group.add(hoodPeak);
 
-    // Blade
     const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.15, 1.1), new THREE.MeshLambertMaterial({ color: 0xdddddd }));
     blade.position.set(0.5, 1.7, 0.6);
     group.add(blade);
 
-    // Legs
     const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.12, 1.2, 6), darkMat);
     legL.position.set(-0.22, 0.6, 0);
     group.add(legL);
@@ -426,7 +489,7 @@ window.addEventListener('DOMContentLoaded', () => {
     stickThumb.style.transform = `translate(${px}px, ${py}px)`;
 
     touchMoveX = px / 35;
-    touchMoveZ = -py / 35; // Forward is up
+    touchMoveZ = -py / 35;
   }
 
   const lookZone = document.getElementById('look-zone');
@@ -450,10 +513,19 @@ window.addEventListener('DOMContentLoaded', () => {
 
   lookZone.addEventListener('touchend', () => { lastX = null; lastY = null; });
 
-  /* ACTIONS */
+  /* ACTIONS & BOOYAH TRIGGER */
   let kills = 0;
+  let gameWon = false;
+
+  function triggerBooyah() {
+    if (gameWon) return;
+    gameWon = true;
+    playBooyahSound();
+    booyahScreen.style.display = 'flex';
+  }
+
   document.getElementById('btn-fire').onclick = () => {
-    if (player.ammo <= 0) return;
+    if (player.ammo <= 0 || gameWon) return;
     player.ammo--;
     document.getElementById('clip-val').innerText = player.ammo;
     playGunshot();
@@ -470,8 +542,16 @@ window.addEventListener('DOMContentLoaded', () => {
       if (bot) {
         bot.alive = false;
         scene.remove(bot.mesh);
-        document.getElementById('kill-count').innerText = ++kills;
-        document.getElementById('alive-count').innerText = 1 + enemies.filter(e => e.alive).length;
+        kills++;
+        document.getElementById('kill-count').innerText = kills;
+
+        const remainingAlive = 1 + enemies.filter(e => e.alive).length;
+        document.getElementById('alive-count').innerText = remainingAlive;
+
+        // Agar sirf hum bache hain (ALIVE: 1) toh BOOYAH!
+        if (remainingAlive === 1) {
+          setTimeout(triggerBooyah, 400);
+        }
       }
     }
   };
